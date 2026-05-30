@@ -39,6 +39,7 @@ const dictionaries = {
     from: 'From',
     minimize: 'Minimize',
     close: 'Close',
+    logout: 'Log out',
   },
   zh: {
     title: '漂流瓶',
@@ -67,6 +68,7 @@ const dictionaries = {
     from: '来自',
     minimize: '最小化',
     close: '关闭',
+    logout: '退出登录',
   },
   jp: {
     title: 'ボトル',
@@ -95,6 +97,7 @@ const dictionaries = {
     from: '差出人',
     minimize: '最小化',
     close: '閉じる',
+    logout: 'ログアウト',
   },
   de: {
     title: 'Flaschenpost',
@@ -123,6 +126,7 @@ const dictionaries = {
     from: 'Von',
     minimize: 'Minimieren',
     close: 'Schließen',
+    logout: 'Abmelden',
   },
   es: {
     title: 'Botellas',
@@ -151,6 +155,7 @@ const dictionaries = {
     from: 'De',
     minimize: 'Minimizar',
     close: 'Cerrar',
+    logout: 'Cerrar sesión',
   },
   ko: {
     title: '병 편지',
@@ -179,6 +184,7 @@ const dictionaries = {
     from: '보낸 사람',
     minimize: '최소화',
     close: '닫기',
+    logout: '로그아웃',
   },
 } satisfies Record<Language, Record<string, string>>;
 

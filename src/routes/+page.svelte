@@ -1,6 +1,7 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import '../app.css';
-  import { session, welcomeMessage } from '$lib/store';
+  import { bottles, currentBottle, session, welcomeMessage } from '$lib/store';
   import { api } from '$lib/api';
   import { translator } from '$lib/i18n';
   import AuthPanel from '$lib/components/AuthPanel.svelte';
@@ -10,6 +11,9 @@
 
   let activeTab: 'throw' | 'bottles' = 'throw';
   let welcomeTimer: ReturnType<typeof setTimeout> | null = null;
+  let colorTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const palette = ['#003f5c', '#58508d', '#bc5090', '#ff6361', '#ffa600'];
 
   $: if ($welcomeMessage) {
     if (welcomeTimer) clearTimeout(welcomeTimer);
@@ -19,8 +23,38 @@
     }, 10000);
   }
 
+  onMount(() => {
+    shuffleBackgroundColors();
+
+    return () => {
+      if (welcomeTimer) clearTimeout(welcomeTimer);
+      if (colorTimer) clearTimeout(colorTimer);
+    };
+  });
+
+  function shuffleBackgroundColors() {
+    const shuffled = [...palette].sort(() => Math.random() - 0.5);
+    const root = document.documentElement;
+    root.style.setProperty('--bg-a', shuffled[0]);
+    root.style.setProperty('--bg-b', shuffled[1]);
+    root.style.setProperty('--bg-c', shuffled[2]);
+    root.style.setProperty('--bg-d', shuffled[3]);
+    root.style.setProperty('--bg-e', shuffled[4]);
+
+    colorTimer = setTimeout(shuffleBackgroundColors, 4500 + Math.random() * 6500);
+  }
+
   function handleTabChange(tab: 'throw' | 'bottles') {
     activeTab = tab;
+  }
+
+  async function logout() {
+    await api.logout();
+    session.set(null);
+    bottles.set([]);
+    currentBottle.set(null);
+    welcomeMessage.set(null);
+    activeTab = 'throw';
   }
 
   async function minimizeWindow() {
@@ -39,6 +73,9 @@
 <div class="drag-region" data-tauri-drag-region></div>
 
 <div class="window-controls">
+  {#if $session}
+    <button class="window-btn logout-btn" onclick={logout} aria-label={$translator('logout')}>{$translator('logout')}</button>
+  {/if}
   <button class="window-btn minimize-btn" onclick={minimizeWindow} aria-label={$translator('minimize')}>−</button>
   <button class="window-btn close-btn" onclick={closeWindow} aria-label={$translator('close')}>&times;</button>
 </div>
@@ -103,7 +140,8 @@
   .drag-region {
     position: fixed;
     inset: 0;
-    z-index: 0;
+    z-index: 1;
+    cursor: move;
   }
 
   .window-controls {
@@ -130,6 +168,12 @@
     font-size: 15px;
     line-height: 1;
     transition: all 0.2s;
+  }
+
+  .logout-btn {
+    width: auto;
+    padding: 0 0.55rem;
+    font-size: 0.78rem;
   }
 
   .window-btn:hover {

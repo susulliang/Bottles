@@ -9,10 +9,21 @@
   --blur: 16px;
   --glass-bg: rgba(255, 255, 255, 0.08);
   --glass-border: rgba(255, 255, 255, 0.12);
+  --bg-a: #003f5c;
+  --bg-b: #58508d;
+  --bg-c: #bc5090;
+  --bg-d: #ff6361;
+  --bg-e: #ffa600;
 }
 
 * {
   box-sizing: border-box;
+}
+
+html, body {
+  min-height: 100vh;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 body {
@@ -20,11 +31,12 @@ body {
   padding: 0;
   font-family: 'Podkova', Georgia, serif;
   background:
-    radial-gradient(circle at 18% 20%, rgba(84, 202, 255, 0.32), transparent 28%),
-    radial-gradient(circle at 82% 12%, rgba(45, 145, 255, 0.28), transparent 32%),
-    linear-gradient(135deg, #032b63 0%, #006cba 48%, #023b75 100%);
+    radial-gradient(circle at 18% 20%, color-mix(in srgb, var(--bg-e) 46%, transparent), transparent 28%),
+    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--bg-c) 40%, transparent), transparent 32%),
+    linear-gradient(135deg, var(--bg-a) 0%, var(--bg-b) 38%, var(--bg-c) 66%, var(--bg-d) 84%, var(--bg-e) 100%);
   background-size: 180% 180%, 160% 160%, 220% 220%;
   animation: ocean-drift 18s ease-in-out infinite alternate;
+  transition: background 1.6s ease;
   min-height: 100vh;
   color: #fff;
   text-shadow: 0 1px 2px rgba(0, 18, 46, 0.45);
@@ -73,6 +85,16 @@ body::-webkit-scrollbar {
   display: none;
 }
 
+button, input, textarea, pre, .glass {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+button {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 /* Monospace font for special fields */
 input, textarea, .monospace {
   font-family: 'Courier New', Courier, monospace;
@@ -80,7 +102,7 @@ input, textarea, .monospace {
 
 .glass {
   position: relative;
-  z-index: 1;
+  z-index: 3;
   background: var(--glass-bg);
   backdrop-filter: blur(var(--blur));
   -webkit-backdrop-filter: blur(var(--blur));
