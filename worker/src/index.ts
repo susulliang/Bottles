@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 interface Env {
-  KV: KVNamespace;
+  bottlesMeta: KVNamespace;
   R2: R2Bucket;
 }
 
@@ -48,7 +48,7 @@ async function verifyAuth(
   if (colon === -1) return null;
   const username = decoded.slice(0, colon);
   const hash = decoded.slice(colon + 1);
-  const record = await env.KV.get<UserRecord>(`user:${username}`, "json");
+  const record = await env.bottlesMeta.get<UserRecord>(`user:${username}`, "json");
   if (!record || record.passphrase_hash !== hash) return null;
   return username;
 }
@@ -78,11 +78,11 @@ app.post("/register", async (c) => {
     return c.json({ error: "invalid username" }, 400);
   }
 
-  const existing = await c.env.KV.get(`user:${username}`);
+  const existing = await c.env.bottlesMeta.get(`user:${username}`);
   if (existing) return c.json({ error: "username taken" }, 409);
 
   const ip = getIP(c.req.raw);
-  const ipCount = parseInt((await c.env.KV.get(`ip:${ip}`)) || "0");
+  const ipCount = parseInt((await c.env.bottlesMeta.get(`ip:${ip}`)) || "0");
   if (ipCount >= 5) return c.json({ error: "IP limit reached" }, 429);
 
   const record: UserRecord = {
@@ -94,8 +94,8 @@ app.post("/register", async (c) => {
   };
 
   await Promise.all([
-    c.env.KV.put(`user:${username}`, JSON.stringify(record)),
-    c.env.KV.put(`ip:${ip}`, String(ipCount + 1)),
+    c.env.bottlesMeta.put(`user:${username}`, JSON.stringify(record)),
+    c.env.bottlesMeta.put(`ip:${ip}`, String(ipCount + 1)),
   ]);
 
   return c.json({ ok: true });
@@ -107,7 +107,7 @@ app.post("/login", async (c) => {
     username: string;
     passphrase_hash: string;
   }>();
-  const record = await c.env.KV.get<UserRecord>(`user:${username}`, "json");
+  const record = await c.env.bottlesMeta.get<UserRecord>(`user:${username}`, "json");
   if (!record || record.passphrase_hash !== passphrase_hash) {
     return c.json({ error: "invalid credentials" }, 401);
   }
@@ -119,7 +119,7 @@ app.post("/login", async (c) => {
 
 // GET /user/:username
 app.get("/user/:username", async (c) => {
-  const record = await c.env.KV.get<UserRecord>(
+  const record = await c.env.bottlesMeta.get<UserRecord>(
     `user:${c.req.param("username")}`,
     "json"
   );

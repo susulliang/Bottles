@@ -14,7 +14,7 @@ pub fn run() {
             session: Mutex::new(None),
             known_pubkeys: Mutex::new(HashMap::new()),
             worker_url: std::env::var("WORKER_URL")
-                .unwrap_or_else(|_| "https://bottles-worker.your-subdomain.workers.dev".into()),
+                .unwrap_or_else(|_| "https://bottles-worker.bottles-susull.workers.dev".into()),
         })
         .invoke_handler(tauri::generate_handler![
             commands::register,

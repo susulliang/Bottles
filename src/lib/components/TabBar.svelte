@@ -1,29 +1,26 @@
 <script lang="ts">
-  let activeTab: 'throw' | 'bottles' = 'throw';
+  let { activeTab = 'throw', onchange }: {
+    activeTab?: 'throw' | 'bottles';
+    onchange?: (tab: 'throw' | 'bottles') => void;
+  } = $props();
 </script>
 
 <div class="tab-bar">
   <button
     class="tab"
     class:active={activeTab === 'throw'}
-    onclick={() => (activeTab = 'throw')}
+    onclick={() => onchange?.('throw')}
   >
     Throw
   </button>
   <button
     class="tab"
     class:active={activeTab === 'bottles'}
-    onclick={() => (activeTab = 'bottles')}
+    onclick={() => onchange?.('bottles')}
   >
     My Bottles
   </button>
 </div>
-
-{#if activeTab === 'throw'}
-  <slot name="throw" />
-{:else}
-  <slot name="bottles" />
-{/if}
 
 <style>
   .tab-bar {

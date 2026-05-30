@@ -3,9 +3,9 @@ main = "src/index.ts"
 compatibility_date = "2024-09-23"
 
 [[kv_namespaces]]
-binding = "KV"
-id = "YOUR_KV_NAMESPACE_ID"
+binding = "bottlesMeta"
+id = "8131e6972aaa4636bacb8625fa22c955"
 
 [[r2_buckets]]
 binding = "R2"
-bucket_name = "bottles"
+bucket_name = "bottles-ocean"

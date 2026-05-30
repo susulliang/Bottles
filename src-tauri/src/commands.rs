@@ -4,7 +4,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::State;
 use uuid::Uuid;
 
-use crate::{api, crypto, state::AppState};
+use crate::{api::{self, client}, crypto, state::AppState};
 
 #[derive(Serialize, Deserialize)]
 pub struct BottleMetaOut {
@@ -22,9 +22,7 @@ pub struct BottleContentOut {
     pub timestamp: u64,
 }
 
-fn client() -> reqwest::Client {
-    reqwest::Client::new()
-}
+
 
 fn now() -> u64 {
     SystemTime::now()

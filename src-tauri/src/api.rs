@@ -42,6 +42,13 @@ pub struct BottleMeta {
     pub timestamp: u64,
 }
 
+pub fn client() -> reqwest::Client {
+    reqwest::Client::builder()
+        .danger_accept_invalid_certs(true)
+        .build()
+        .unwrap_or_else(|_| reqwest::Client::new())
+}
+
 pub fn passphrase_hash(username: &str, passphrase: &str) -> String {
     let mut h = Sha256::new();
     h.update(username.as_bytes());
