@@ -1,0 +1,1 @@
+This folder contains the built output assets for the worker "bottles-worker" generated at 2026-05-30T08:22:31.237Z.

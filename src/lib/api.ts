@@ -21,6 +21,9 @@ export const api = {
   login: (username: string, passphrase: string) =>
     invoke('login', { username, passphrase }),
 
+  loginOrRegister: (username: string, passphrase: string) =>
+    invoke<boolean>('login_or_register', { username, passphrase }),
+
   logout: () => invoke('logout'),
 
   throwBottle: (to: string, body: string) =>
@@ -34,4 +37,8 @@ export const api = {
 
   deleteBottle: (id: string) =>
     invoke('delete_bottle', { id }),
+
+  minimizeApp: () => invoke('minimize_app'),
+
+  exitApp: () => invoke('exit_app'),
 };

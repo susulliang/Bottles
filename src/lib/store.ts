@@ -17,3 +17,4 @@ interface BottleContent {
 export const session = writable<string | null>(null);
 export const bottles = writable<BottleMeta[]>([]);
 export const currentBottle = writable<BottleContent | null>(null);
+export const welcomeMessage = writable<string | null>(null);

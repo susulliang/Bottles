@@ -19,11 +19,14 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             commands::register,
             commands::login,
+            commands::login_or_register,
             commands::logout,
             commands::throw_bottle,
             commands::fetch_bottles,
             commands::open_bottle,
             commands::delete_bottle,
+            commands::minimize_app,
+            commands::exit_app,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

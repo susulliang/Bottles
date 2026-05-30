@@ -2,8 +2,28 @@
   import { onMount } from 'svelte';
   import { api } from '../api';
   import { bottles, currentBottle } from '../store';
+  import { translator } from '$lib/i18n';
+
+  interface BottleMeta {
+    id: string;
+    from: string;
+    encrypted: boolean;
+    timestamp: number;
+  }
+
+  interface BottleGroup {
+    from: string;
+    count: number;
+    latest: BottleMeta;
+    encryptedCount: number;
+  }
 
   let loading = false;
+  let replies: Record<string, string> = {};
+  let replying: Record<string, boolean> = {};
+  let replyStatus: Record<string, string> = {};
+
+  $: groups = groupBottles($bottles);
 
   onMount(() => {
     refresh();
@@ -17,6 +37,27 @@
     loading = false;
   }
 
+  function groupBottles(items: BottleMeta[]): BottleGroup[] {
+    const bySender = new Map<string, BottleMeta[]>();
+    for (const bottle of items) {
+      const list = bySender.get(bottle.from) || [];
+      list.push(bottle);
+      bySender.set(bottle.from, list);
+    }
+
+    return [...bySender.entries()]
+      .map(([from, list]) => {
+        const sorted = [...list].sort((a, b) => b.timestamp - a.timestamp);
+        return {
+          from,
+          count: list.length,
+          latest: sorted[0],
+          encryptedCount: list.filter((b) => b.encrypted).length,
+        };
+      })
+      .sort((a, b) => b.latest.timestamp - a.latest.timestamp);
+  }
+
   async function open(id: string) {
     try {
       const content = await api.openBottle(id);
@@ -26,13 +67,20 @@
     }
   }
 
-  async function remove(id: string) {
+  async function quickReply(to: string) {
+    const body = replies[to]?.trim();
+    if (!body) return;
+
+    replying = { ...replying, [to]: true };
+    replyStatus = { ...replyStatus, [to]: '' };
     try {
-      await api.deleteBottle(id);
-      bottles.update((b) => b.filter((x) => x.id !== id));
-      currentBottle.update((c) => (c?.id === id ? null : c));
+      await api.throwBottle(to, body);
+      replies = { ...replies, [to]: '' };
+      replyStatus = { ...replyStatus, [to]: $translator('bottleSent') };
     } catch (e: unknown) {
-      alert(typeof e === 'string' ? e : 'Failed to delete');
+      replyStatus = { ...replyStatus, [to]: typeof e === 'string' ? e : 'Failed to send' };
+    } finally {
+      replying = { ...replying, [to]: false };
     }
   }
 
@@ -48,33 +96,48 @@
 <div class="bottles-container">
   <div class="glass bottles-card">
     <div class="header">
-      <h2>My Bottles</h2>
+      <h2>{$translator('myBottles')}</h2>
       <button class="icon-btn" onclick={refresh} disabled={loading}>
-        {loading ? '...' : '\u21BB'}
+        {loading ? '...' : '↻'}
       </button>
     </div>
 
-    {#if $bottles.length === 0}
-      <p class="empty">No bottles yet. Waiting for the tide...</p>
+    {#if groups.length === 0}
+      <p class="empty">{$translator('noBottles')}</p>
     {:else}
       <div class="list">
-        {#each $bottles as b (b.id)}
-          <div class="bottle-item glass" role="button" tabindex="0" onkeydown={(e) => { if (e.key === 'Enter') open(b.id); }} onclick={() => open(b.id)}>
-            <div class="bottle-info">
-              <span class="from">{b.from}</span>
-              <span class="time">{formatTime(b.timestamp)}</span>
-            </div>
-            <div class="bottle-meta">
-              {#if b.encrypted}
-                <span class="badge locked">Encrypted</span>
-              {:else}
-                <span class="badge">Plain</span>
+        {#each groups as group (group.from)}
+          <section class="sender-row glass">
+            <button class="sender-main" onclick={() => open(group.latest.id)} aria-label={$translator('openLatest')}>
+              <div class="sender-icon">✉</div>
+              <div class="sender-info">
+                <span class="from">{group.from}</span>
+                <span class="time">{$translator('latest')}: {formatTime(group.latest.timestamp)}</span>
+              </div>
+              <div class="count-pill">
+                <span>×{group.count}</span>
+                <small>{$translator('bottles')}</small>
+              </div>
+            </button>
+
+            <div class="row-meta">
+              {#if group.encryptedCount > 0}
+                <span class="badge locked">🔒 {group.encryptedCount}</span>
               {/if}
-              <button class="delete-btn" onclick={(e) => { e.stopPropagation(); remove(b.id); }}>
-                &times;
-              </button>
+              <span class="badge">{group.count - group.encryptedCount} {$translator('plain')}</span>
             </div>
-          </div>
+
+            <form class="quick-reply" onsubmit={(e) => { e.preventDefault(); quickReply(group.from); }}>
+              <input bind:value={replies[group.from]} placeholder={$translator('replyPlaceholder')} />
+              <button type="submit" disabled={replying[group.from] || !replies[group.from]?.trim()}>
+                {replying[group.from] ? $translator('replying') : $translator('reply')}
+              </button>
+            </form>
+
+            {#if replyStatus[group.from]}
+              <p class="reply-status">{replyStatus[group.from]}</p>
+            {/if}
+          </section>
         {/each}
       </div>
     {/if}
@@ -85,7 +148,7 @@
   <div class="modal-overlay" role="presentation" onclick={closeModal}>
     <div class="glass modal" role="dialog" tabindex="-1" onkeydown={(e) => { if (e.key === 'Escape') closeModal(); }} onclick={(e) => e.stopPropagation()}>
       <div class="modal-header">
-        <span class="from-label">From: {$currentBottle.from}</span>
+        <span class="from-label">{$translator('from')}: {$currentBottle.from}</span>
         <span class="time-label">{formatTime($currentBottle.timestamp)}</span>
         <button class="icon-btn" onclick={closeModal}>&times;</button>
       </div>
@@ -96,7 +159,7 @@
 
 <style>
   .bottles-container {
-    max-width: 600px;
+    max-width: 680px;
     margin: 2rem auto;
   }
 
@@ -132,7 +195,7 @@
   }
 
   .empty {
-    color: rgba(255,255,255,0.4);
+    color: rgba(255,255,255,0.62);
     text-align: center;
     padding: 3rem 0;
   }
@@ -140,50 +203,89 @@
   .list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.75rem;
   }
 
-  .bottle-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  .sender-row {
     padding: 1rem;
+  }
+
+  .sender-main {
+    width: 100%;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.85rem;
+    align-items: center;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    text-align: left;
     cursor: pointer;
-    transition: background 0.2s;
   }
 
-  .bottle-item:hover {
-    background: rgba(255,255,255,0.08);
+  .sender-icon {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.18);
   }
 
-  .bottle-info {
+  .sender-info {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+    min-width: 0;
   }
 
   .from {
     color: #fff;
-    font-weight: 500;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .time {
-    color: rgba(255,255,255,0.4);
+    color: rgba(255,255,255,0.62);
     font-size: 0.8rem;
   }
 
-  .bottle-meta {
+  .count-pill {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
+    min-width: 64px;
+    padding: 0.35rem 0.65rem;
+    border-radius: 14px;
+    background: rgba(123, 218, 255, 0.16);
+    border: 1px solid rgba(255,255,255,0.18);
+  }
+
+  .count-pill span {
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  .count-pill small {
+    color: rgba(255,255,255,0.62);
+    font-size: 0.7rem;
+  }
+
+  .row-meta {
+    display: flex;
+    gap: 0.4rem;
+    margin: 0.75rem 0;
   }
 
   .badge {
     font-size: 0.75rem;
     padding: 0.2rem 0.5rem;
-    border-radius: 6px;
+    border-radius: 999px;
     background: rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.6);
+    color: rgba(255,255,255,0.72);
   }
 
   .badge.locked {
@@ -191,17 +293,44 @@
     color: #6bffb8;
   }
 
-  .delete-btn {
-    background: none;
-    border: none;
-    color: rgba(255,255,255,0.3);
-    cursor: pointer;
-    font-size: 1.2rem;
-    padding: 0.25rem;
+  .quick-reply {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
   }
 
-  .delete-btn:hover {
-    color: #ff6b6b;
+  .quick-reply input {
+    min-width: 0;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    outline: none;
+  }
+
+  .quick-reply input::placeholder {
+    color: rgba(255,255,255,0.45);
+  }
+
+  .quick-reply button {
+    padding: 0.65rem 0.9rem;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.16);
+    color: #fff;
+    cursor: pointer;
+  }
+
+  .quick-reply button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .reply-status {
+    margin: 0.6rem 0 0;
+    color: #6bffb8;
+    font-size: 0.85rem;
   }
 
   .modal-overlay {
@@ -238,14 +367,14 @@
   }
 
   .time-label {
-    color: rgba(255,255,255,0.4);
+    color: rgba(255,255,255,0.62);
     font-size: 0.8rem;
     flex: 1;
   }
 
   .modal-body {
     overflow-y: auto;
-    color: rgba(255,255,255,0.9);
+    color: rgba(255,255,255,0.94);
     white-space: pre-wrap;
     word-break: break-word;
     font-family: inherit;

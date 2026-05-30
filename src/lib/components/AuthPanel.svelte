@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { session } from '$lib/store';
+  import { session, welcomeMessage } from '$lib/store';
   import { api } from '$lib/api';
+  import { language, languageNames, translator, type Language } from '$lib/i18n';
 
   let username = '';
   let passphrase = '';
-  let isLogin = true;
   let error = '';
   let loading = false;
 
@@ -12,10 +12,9 @@
     error = '';
     loading = true;
     try {
-      if (isLogin) {
-        await api.login(username, passphrase);
-      } else {
-        await api.register(username, passphrase);
+      const registered = await api.loginOrRegister(username, passphrase);
+      if (registered) {
+        welcomeMessage.set($translator('welcome'));
       }
       session.set(username);
     } catch (e: any) {
@@ -28,13 +27,23 @@
 
 <div class="auth-container">
   <div class="glass auth-card">
-    <h1>漂流瓶</h1>
-    <p class="subtitle">Bottles</p>
+    <div class="language-row">
+      {#each Object.entries(languageNames) as [code, label]}
+        <button
+          type="button"
+          class:active-lang={$language === code}
+          onclick={() => language.set(code as Language)}
+        >{label}</button>
+      {/each}
+    </div>
+
+    <h1>{$translator('title')}</h1>
+    <p class="subtitle">{$translator('subtitle')}</p>
 
     <form onsubmit={(e) => { e.preventDefault(); submit(); }}>
       <input
         bind:value={username}
-        placeholder="Username"
+        placeholder={$translator('username')}
         maxlength={32}
         pattern="[a-zA-Z0-9_-]+"
         required
@@ -42,7 +51,7 @@
       <input
         type="password"
         bind:value={passphrase}
-        placeholder="Passphrase"
+        placeholder={$translator('passphrase')}
         required
       />
 
@@ -51,18 +60,16 @@
       {/if}
 
       <button type="submit" disabled={loading}>
-        {loading ? '...' : isLogin ? 'Login' : 'Register'}
+        {loading ? $translator('entering') : $translator('enter')}
       </button>
     </form>
-
-    <button class="link" onclick={() => { isLogin = !isLogin; error = ''; }}>
-      {isLogin ? 'No account? Register' : 'Already have an account? Login'}
-    </button>
   </div>
 </div>
 
 <style>
   .auth-container {
+    position: relative;
+    z-index: 1;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -75,6 +82,27 @@
     width: 100%;
     max-width: 400px;
     text-align: center;
+  }
+
+  .language-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .language-row button {
+    padding: 0.35rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    font-size: 0.75rem;
+  }
+
+  .language-row button.active-lang {
+    background: rgba(123, 218, 255, 0.28);
+    border-color: rgba(255,255,255,0.45);
   }
 
   h1 {
@@ -132,17 +160,6 @@
   button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-  }
-
-  .link {
-    background: none;
-    color: rgba(255,255,255,0.6);
-    font-size: 0.85rem;
-    margin-top: 0.5rem;
-  }
-
-  .link:hover {
-    color: #fff;
   }
 
   .error {

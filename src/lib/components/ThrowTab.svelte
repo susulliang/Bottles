@@ -1,6 +1,7 @@
 <script lang="ts">
   import { api } from '../api';
   import { bottles } from '../store';
+  import { translator } from '$lib/i18n';
 
   let to = '';
   let message = '';
@@ -14,7 +15,7 @@
     status = '';
     try {
       await api.throwBottle(to.trim(), message);
-      status = 'Bottle sent! \u{1F30A}';
+      status = $translator('bottleSent');
       isError = false;
       message = '';
       to = '';
@@ -29,23 +30,23 @@
 </script>
 
 <div class="glass throw-card">
-  <h2>Throw a Bottle</h2>
+  <h2>{$translator('throwBottle')}</h2>
   <form onsubmit={(e) => { e.preventDefault(); send(); }}>
     <input
       bind:value={to}
-      placeholder="Recipient username"
+      placeholder={$translator('recipient')}
       maxlength={32}
       required
     />
     <textarea
       bind:value={message}
-      placeholder="Write your message... up to 128KB"
+      placeholder={$translator('message')}
       maxlength={131072}
       required
     ></textarea>
     <div class="char-count">{message.length} / 131072</div>
     <button type="submit" disabled={sending}>
-      {sending ? 'Throwing...' : 'Throw into the Ocean'}
+      {sending ? $translator('throwing') : $translator('throwIntoOcean')}
     </button>
   </form>
   {#if status}

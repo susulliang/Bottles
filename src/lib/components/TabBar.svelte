@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { translator } from '$lib/i18n';
+
   let { activeTab = 'throw', onchange }: {
     activeTab?: 'throw' | 'bottles';
     onchange?: (tab: 'throw' | 'bottles') => void;
@@ -11,14 +13,14 @@
     class:active={activeTab === 'throw'}
     onclick={() => onchange?.('throw')}
   >
-    Throw
+    {$translator('throwBottle')}
   </button>
   <button
     class="tab"
     class:active={activeTab === 'bottles'}
     onclick={() => onchange?.('bottles')}
   >
-    My Bottles
+    {$translator('myBottles')}
   </button>
 </div>
 
