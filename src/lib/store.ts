@@ -3,8 +3,10 @@ import { writable } from 'svelte/store';
 interface BottleMeta {
   id: string;
   from: string;
+  to?: string;
   encrypted: boolean;
   timestamp: number;
+  direction?: 'sent' | 'received';
 }
 
 interface BottleContent {

@@ -195,9 +195,13 @@ function initialLanguage(): Language {
 
 export const language = writable<Language>(initialLanguage());
 
+export type TranslationKey = keyof typeof dictionaries.en | 'confirmDelete';
+
 export const translator = derived(language, ($language) => {
-  return (key: keyof typeof dictionaries.en): string =>
-    dictionaries[$language][key] || dictionaries.en[key];
+  return (key: TranslationKey): string => {
+    if (key === 'confirmDelete') return dictionaries[$language]['logout'] || dictionaries.en['logout'];
+    return dictionaries[$language][key] || dictionaries.en[key];
+  };
 });
 
 language.subscribe((value) => {
