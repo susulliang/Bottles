@@ -24,6 +24,7 @@
   }
 
   onMount(() => {
+    document.body.setAttribute('data-tauri-drag-region', '');
     shuffleBackgroundColors();
 
     return () => {
@@ -70,9 +71,7 @@
   <title>Bottles - 漂流瓶</title>
 </svelte:head>
 
-<div class="drag-region" data-tauri-drag-region></div>
-
-<div class="window-controls">
+<div class="window-controls" data-tauri-no-drag>
   {#if $session}
     <button class="window-btn logout-btn" onclick={logout} aria-label={$translator('logout')}>{$translator('logout')}</button>
   {/if}
@@ -81,15 +80,17 @@
 </div>
 
 {#if $welcomeMessage}
-  <div class="welcome-bubble" role="status">
+  <div class="welcome-bubble" role="status" data-tauri-no-drag>
     {$welcomeMessage}
   </div>
 {/if}
 
 {#if !$session}
-  <AuthPanel />
+  <div data-tauri-no-drag>
+    <AuthPanel />
+  </div>
 {:else}
-  <div class="app">
+  <div class="app" data-tauri-no-drag>
     <TabBar activeTab={activeTab} onchange={handleTabChange} />
     {#if activeTab === 'throw'}
       <ThrowTab />
@@ -135,13 +136,6 @@
       opacity: 0;
       transform: translate(-50%, -16px) scale(0.98);
     }
-  }
-
-  .drag-region {
-    position: fixed;
-    inset: 0;
-    z-index: 1;
-    cursor: move;
   }
 
   .window-controls {

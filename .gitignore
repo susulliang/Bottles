@@ -38,6 +38,5 @@ Cargo.lock.bak
 *.swp
 *.swo
 
-# OS/editor temp files
-*.tmp
-*.temp
+# Cloudflare worker secrets
+worker/.dev.vars
