@@ -55,15 +55,16 @@ jobs:
               src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app
               src-tauri/target/aarch64-apple-darwin/release/bottles
 
-          - name: macOS Intel
-            os: macos-13
-            target: x86_64-apple-darwin
-            rust-target: x86_64-apple-darwin
-            artifact-name: bottles-macos-x64
+          - name: macOS Universal
+            os: macos-latest
+            target: universal-apple-darwin
+            rust-target: aarch64-apple-darwin
+            universal: true
+            artifact-name: bottles-macos-universal
             bundle-glob: |
-              src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
-              src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app
-              src-tauri/target/x86_64-apple-darwin/release/bottles
+              src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+              src-tauri/target/universal-apple-darwin/release/bundle/macos/*.app
+              src-tauri/target/universal-apple-darwin/release/bottles
 
           - name: Linux deb x64
             os: ubuntu-22.04
@@ -102,6 +103,10 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.rust-target }}
+
+      - name: Install x86_64 target for universal build
+        if: matrix.universal
+        run: rustup target add x86_64-apple-darwin
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
