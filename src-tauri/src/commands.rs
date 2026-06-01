@@ -251,3 +251,22 @@ pub async fn delete_bottle(id: String, state: State<'_, AppState>) -> Result<(),
     };
     api::delete_bottle(&client(), &state.worker_url, &username, &ph, &id).await
 }
+
+#[tauri::command]
+pub async fn fetch_sent_bottles(state: State<'_, AppState>) -> Result<Vec<BottleMetaOut>, String> {
+    let (username, ph) = {
+        let s = state.session.lock().unwrap();
+        let s = s.as_ref().ok_or("not logged in")?;
+        (s.username.clone(), s.passphrase_hash.clone())
+    };
+    let metas = api::fetch_sent_bottles(&client(), &state.worker_url, &username, &ph).await?;
+    Ok(metas
+        .into_iter()
+        .map(|m| BottleMetaOut {
+            id: m.id,
+            from: m.from,
+            encrypted: m.encrypted,
+            timestamp: m.timestamp,
+        })
+        .collect())
+}

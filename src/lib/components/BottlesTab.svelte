@@ -3,12 +3,15 @@
   import { api } from '../api';
   import { bottles, currentBottle } from '../store';
   import { translator } from '$lib/i18n';
+  import MessageBottleList from './MessageBottleList.svelte';
 
   interface BottleMeta {
     id: string;
     from: string;
+    to?: string;
     encrypted: boolean;
     timestamp: number;
+    direction?: 'sent' | 'received';
   }
 
   interface BottleGroup {
@@ -22,8 +25,20 @@
   let replies: Record<string, string> = {};
   let replying: Record<string, boolean> = {};
   let replyStatus: Record<string, string> = {};
+  let selectedSender: string | null = null;
 
   $: groups = groupBottles($bottles);
+  $: selectedMessages = selectedSender
+    ? $bottles
+        .filter((b) => b.from === selectedSender || (b.direction === 'sent' && b.to === selectedSender))
+        .map((b) => ({
+          id: b.id,
+          body: '',
+          timestamp: b.timestamp,
+          encrypted: b.encrypted,
+          direction: (b.direction || 'received') as 'sent' | 'received',
+        }))
+    : [];
 
   onMount(() => {
     refresh();
@@ -32,7 +47,15 @@
   async function refresh() {
     loading = true;
     try {
-      bottles.set(await api.fetchBottles());
+      const [received, sent] = await Promise.all([
+        api.fetchBottles(),
+        api.fetchSentBottles(),
+      ]);
+      const allBottles = [
+        ...received,
+        ...sent.map((b) => ({ ...b, direction: 'sent' as const })),
+      ];
+      bottles.set(allBottles);
     } catch { /* ignore */ }
     loading = false;
   }
@@ -40,9 +63,10 @@
   function groupBottles(items: BottleMeta[]): BottleGroup[] {
     const bySender = new Map<string, BottleMeta[]>();
     for (const bottle of items) {
-      const list = bySender.get(bottle.from) || [];
+      const key = bottle.direction === 'sent' ? bottle.to || bottle.from : bottle.from;
+      const list = bySender.get(key) || [];
       list.push(bottle);
-      bySender.set(bottle.from, list);
+      bySender.set(key, list);
     }
 
     return [...bySender.entries()]
@@ -67,6 +91,14 @@
     }
   }
 
+  function openSender(from: string) {
+    selectedSender = from;
+  }
+
+  function closeSenderView() {
+    selectedSender = null;
+  }
+
   async function quickReply(to: string) {
     const body = replies[to]?.trim();
     if (!body) return;
@@ -88,60 +120,82 @@
     currentBottle.set(null);
   }
 
+  async function deleteBottle() {
+    if (!$currentBottle) return;
+    if (!confirm($translator('confirmDelete') || 'Delete this message?')) return;
+
+    try {
+      await api.deleteBottle($currentBottle.id);
+      closeModal();
+      await refresh();
+    } catch (e: unknown) {
+      alert(typeof e === 'string' ? e : 'Failed to delete');
+    }
+  }
+
   function formatTime(ts: number): string {
-    return new Date(ts).toLocaleString();
+    return new Date(ts * 1000).toLocaleString();
   }
 </script>
 
 <div class="bottles-container">
-  <div class="glass bottles-card">
-    <div class="header">
-      <h2>{$translator('myBottles')}</h2>
-      <button class="icon-btn" onclick={refresh} disabled={loading}>
-        {loading ? '...' : '↻'}
-      </button>
-    </div>
-
-    {#if groups.length === 0}
-      <p class="empty">{$translator('noBottles')}</p>
-    {:else}
-      <div class="list">
-        {#each groups as group (group.from)}
-          <section class="sender-row glass">
-            <button class="sender-main" onclick={() => open(group.latest.id)} aria-label={$translator('openLatest')}>
-              <div class="sender-icon">✉</div>
-              <div class="sender-info">
-                <span class="from">{group.from}</span>
-                <span class="time">{$translator('latest')}: {formatTime(group.latest.timestamp)}</span>
-              </div>
-              <div class="count-pill">
-                <span>×{group.count}</span>
-                <small>{$translator('bottles')}</small>
-              </div>
-            </button>
-
-            <div class="row-meta">
-              {#if group.encryptedCount > 0}
-                <span class="badge locked">🔒 {group.encryptedCount}</span>
-              {/if}
-              <span class="badge">{group.count - group.encryptedCount} {$translator('plain')}</span>
-            </div>
-
-            <form class="quick-reply" onsubmit={(e) => { e.preventDefault(); quickReply(group.from); }}>
-              <input bind:value={replies[group.from]} placeholder={$translator('replyPlaceholder')} />
-              <button type="submit" disabled={replying[group.from] || !replies[group.from]?.trim()}>
-                {replying[group.from] ? $translator('replying') : $translator('reply')}
-              </button>
-            </form>
-
-            {#if replyStatus[group.from]}
-              <p class="reply-status">{replyStatus[group.from]}</p>
-            {/if}
-          </section>
-        {/each}
+  {#if selectedSender}
+    <MessageBottleList
+      from={selectedSender}
+      messages={selectedMessages}
+      onSelect={open}
+      onBack={closeSenderView}
+    />
+  {:else}
+    <div class="glass bottles-card">
+      <div class="header">
+        <h2>{$translator('myBottles')}</h2>
+        <button class="icon-btn" onclick={refresh} disabled={loading}>
+          {loading ? '...' : '↻'}
+        </button>
       </div>
-    {/if}
-  </div>
+
+      {#if groups.length === 0}
+        <p class="empty">{$translator('noBottles')}</p>
+      {:else}
+        <div class="list">
+          {#each groups as group (group.from)}
+            <section class="sender-row glass">
+              <button class="sender-main" onclick={() => openSender(group.from)} aria-label={$translator('openLatest')}>
+                <div class="sender-icon">✉</div>
+                <div class="sender-info">
+                  <span class="from">{group.from}</span>
+                  <span class="time">{$translator('latest')}: {formatTime(group.latest.timestamp)}</span>
+                </div>
+                <div class="count-pill">
+                  <span>×{group.count}</span>
+                  <small>{$translator('bottles')}</small>
+                </div>
+              </button>
+
+              <div class="row-meta">
+                {#if group.encryptedCount > 0}
+                  <span class="badge locked">🔒 {group.encryptedCount}</span>
+                {/if}
+                <span class="badge">{group.count - group.encryptedCount} {$translator('plain')}</span>
+              </div>
+
+              <form class="quick-reply" onsubmit={(e) => { e.preventDefault(); quickReply(group.from); }}>
+                <input bind:value={replies[group.from]} placeholder={$translator('replyPlaceholder')} />
+                <button type="submit" disabled={replying[group.from] || !replies[group.from]?.trim()}>
+                  {replying[group.from] ? $translator('replying') : $translator('reply')}
+                </button>
+              </form>
+
+              {#if replyStatus[group.from]}
+                <p class="reply-status">{replyStatus[group.from]}</p>
+              {/if}
+            </section>
+          {/each}
+        </div>
+      {/if}
+    </div>
+  {/if}
 </div>
 
 {#if $currentBottle}
@@ -150,7 +204,10 @@
       <div class="modal-header">
         <span class="from-label">{$translator('from')}: {$currentBottle.from}</span>
         <span class="time-label">{formatTime($currentBottle.timestamp)}</span>
-        <button class="icon-btn" onclick={closeModal}>&times;</button>
+        <div class="modal-actions">
+          <button class="icon-btn delete-btn" onclick={deleteBottle} title="Delete" aria-label="Delete">🗑</button>
+          <button class="icon-btn" onclick={closeModal}>&times;</button>
+        </div>
       </div>
       <pre class="modal-body">{$currentBottle.body}</pre>
     </div>
@@ -380,5 +437,18 @@
     font-family: inherit;
     margin: 0;
     line-height: 1.6;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .delete-btn {
+    color: #ff6b6b;
+  }
+
+  .delete-btn:hover {
+    background: rgba(255, 107, 107, 0.2);
   }
 </style>

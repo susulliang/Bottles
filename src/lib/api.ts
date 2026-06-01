@@ -38,6 +38,9 @@ export const api = {
   deleteBottle: (id: string) =>
     invoke('delete_bottle', { id }),
 
+  fetchSentBottles: () =>
+    invoke<BottleMeta[]>('fetch_sent_bottles'),
+
   minimizeApp: () => invoke('minimize_app'),
 
   exitApp: () => invoke('exit_app'),

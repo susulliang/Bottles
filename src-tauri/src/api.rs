@@ -245,3 +245,24 @@ pub async fn delete_bottle(
         Err(res.text().await.unwrap_or_default())
     }
 }
+
+pub async fn fetch_sent_bottles(
+    client: &Client,
+    worker_url: &str,
+    username: &str,
+    passphrase_hash: &str,
+) -> Result<Vec<BottleMeta>, String> {
+    let creds = STANDARD.encode(format!("{username}:{passphrase_hash}"));
+    let url = format!("{worker_url}/sent/{username}");
+    let res = client
+        .get(&url)
+        .header("Authorization", format!("Basic {creds}"))
+        .send()
+        .await
+        .map_err(|e| request_error(&url, e))?;
+    if res.status().is_success() {
+        res.json().await.map_err(|e| e.to_string())
+    } else {
+        Err(res.text().await.unwrap_or_default())
+    }
+}

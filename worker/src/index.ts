@@ -141,11 +141,18 @@ app.post("/throw", async (c) => {
   if (bodySize > 128 * 1024) return c.json({ error: "body too large" }, 413);
 
   bottle.from = username;
-  await c.env.R2.put(
-    `bottles/${bottle.to}/${bottle.id}.json`,
-    JSON.stringify(bottle),
-    { httpMetadata: { contentType: "application/json" } }
-  );
+  await Promise.all([
+    c.env.R2.put(
+      `bottles/${bottle.to}/${bottle.id}.json`,
+      JSON.stringify(bottle),
+      { httpMetadata: { contentType: "application/json" } }
+    ),
+    c.env.R2.put(
+      `sent/${username}/${bottle.id}.json`,
+      JSON.stringify(bottle),
+      { httpMetadata: { contentType: "application/json" } }
+    ),
+  ]);
   return c.json({ ok: true });
 });
 
@@ -177,6 +184,25 @@ app.get("/bottle/:id", async (c) => {
   const obj = await c.env.R2.get(`bottles/${username}/${id}.json`);
   if (!obj) return c.json({ error: "not found" }, 404);
   return c.json(await obj.json());
+});
+
+// GET /sent/:username
+app.get("/sent/:username", async (c) => {
+  const username = await verifyAuth(c.req.raw, c.env);
+  if (!username || username !== c.req.param("username")) {
+    return c.json({ error: "unauthorized" }, 401);
+  }
+
+  const list = await c.env.R2.list({ prefix: `sent/${username}/` });
+  const metas = await Promise.all(
+    list.objects.map(async (obj) => {
+      const raw = await c.env.R2.get(obj.key);
+      if (!raw) return null;
+      const b = await raw.json<Bottle>();
+      return { id: b.id, from: b.from, to: b.to, encrypted: b.encrypted, timestamp: b.timestamp };
+    })
+  );
+  return c.json(metas.filter(Boolean));
 });
 
 // DELETE /bottle/:id
