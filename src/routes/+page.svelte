@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import '../app.css';
-  import { bottles, currentBottle, session, welcomeMessage } from '$lib/store';
+  import { bottles, session, welcomeMessage } from '$lib/store';
   import { api } from '$lib/api';
   import { translator } from '$lib/i18n';
   import AuthPanel from '$lib/components/AuthPanel.svelte';
@@ -12,6 +12,7 @@
   let activeTab: 'throw' | 'bottles' = 'throw';
   let welcomeTimer: ReturnType<typeof setTimeout> | null = null;
   let colorTimer: ReturnType<typeof setTimeout> | null = null;
+  let isMacOS = false;
 
   const palette = ['#003f5c', '#58508d', '#bc5090', '#ff6361', '#ffa600'];
 
@@ -24,7 +25,7 @@
   }
 
   onMount(() => {
-    document.body.setAttribute('data-tauri-drag-region', '');
+    isMacOS = /Mac/i.test(navigator.userAgent);
     shuffleBackgroundColors();
 
     return () => {
@@ -53,7 +54,6 @@
     await api.logout();
     session.set(null);
     bottles.set([]);
-    currentBottle.set(null);
     welcomeMessage.set(null);
     activeTab = 'throw';
   }
@@ -71,12 +71,18 @@
   <title>Bottles - 漂流瓶</title>
 </svelte:head>
 
-<div class="window-controls" data-tauri-no-drag>
+{#if !isMacOS}
+  <div class="drag-region" data-tauri-drag-region aria-hidden="true"></div>
+{/if}
+
+<div class="window-controls" data-tauri-no-drag class:macos={isMacOS}>
   {#if $session}
     <button class="window-btn logout-btn" onclick={logout} aria-label={$translator('logout')}>{$translator('logout')}</button>
   {/if}
-  <button class="window-btn minimize-btn" onclick={minimizeWindow} aria-label={$translator('minimize')}>−</button>
-  <button class="window-btn close-btn" onclick={closeWindow} aria-label={$translator('close')}>&times;</button>
+  {#if !isMacOS}
+    <button class="window-btn minimize-btn" onclick={minimizeWindow} aria-label={$translator('minimize')}>−</button>
+    <button class="window-btn close-btn" onclick={closeWindow} aria-label={$translator('close')}>&times;</button>
+  {/if}
 </div>
 
 {#if $welcomeMessage}
@@ -86,11 +92,11 @@
 {/if}
 
 {#if !$session}
-  <div data-tauri-no-drag>
+  <div class="screen-shell">
     <AuthPanel />
   </div>
 {:else}
-  <div class="app" data-tauri-no-drag>
+  <div class="screen-shell app-shell">
     <TabBar activeTab={activeTab} onchange={handleTabChange} />
     {#if activeTab === 'throw'}
       <ThrowTab />
@@ -138,6 +144,15 @@
     }
   }
 
+  .drag-region {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 44px;
+    z-index: 10;
+  }
+
   .window-controls {
     position: fixed;
     top: 8px;
@@ -145,6 +160,10 @@
     z-index: 1000;
     display: flex;
     gap: 6px;
+  }
+
+  .window-controls.macos {
+    right: 12px;
   }
 
   .window-btn {
@@ -183,10 +202,14 @@
     background: rgba(255, 95, 87, 0.42);
   }
 
-  .app {
+  .screen-shell {
     position: relative;
-    z-index: 1;
+    z-index: 20;
+  }
+
+  .app-shell {
     max-width: 800px;
     margin: 0 auto;
+    padding-top: 2.5rem;
   }
 </style>

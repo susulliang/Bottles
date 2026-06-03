@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 
-interface BottleMeta {
+export interface BottleMeta {
   id: string;
   from: string;
   to?: string;
@@ -9,7 +9,7 @@ interface BottleMeta {
   direction?: 'sent' | 'received';
 }
 
-interface BottleContent {
+export interface BottleContent {
   id: string;
   from: string;
   body: string;
@@ -18,5 +18,4 @@ interface BottleContent {
 
 export const session = writable<string | null>(null);
 export const bottles = writable<BottleMeta[]>([]);
-export const currentBottle = writable<BottleContent | null>(null);
 export const welcomeMessage = writable<string | null>(null);

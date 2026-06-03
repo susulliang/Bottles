@@ -1,18 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { api } from '../api';
-  import { bottles, currentBottle } from '../store';
+  import { bottles, type BottleContent, type BottleMeta } from '../store';
   import { translator } from '$lib/i18n';
   import MessageBottleList from './MessageBottleList.svelte';
-
-  interface BottleMeta {
-    id: string;
-    from: string;
-    to?: string;
-    encrypted: boolean;
-    timestamp: number;
-    direction?: 'sent' | 'received';
-  }
 
   interface BottleGroup {
     from: string;
@@ -26,6 +17,9 @@
   let replying: Record<string, boolean> = {};
   let replyStatus: Record<string, string> = {};
   let selectedSender: string | null = null;
+  let activeBottle: BottleContent | null = null;
+  let activeBottleId: string | null = null;
+  let openingBottleId: string | null = null;
 
   $: groups = groupBottles($bottles);
   $: selectedMessages = selectedSender
@@ -83,20 +77,28 @@
   }
 
   async function open(id: string) {
+    openingBottleId = id;
     try {
       const content = await api.openBottle(id);
-      currentBottle.set(content);
+      activeBottle = content;
+      activeBottleId = id;
     } catch (e: unknown) {
       alert(typeof e === 'string' ? e : 'Failed to open');
+    } finally {
+      openingBottleId = null;
     }
   }
 
   function openSender(from: string) {
     selectedSender = from;
+    activeBottle = null;
+    activeBottleId = null;
   }
 
   function closeSenderView() {
     selectedSender = null;
+    activeBottle = null;
+    activeBottleId = null;
   }
 
   async function quickReply(to: string) {
@@ -116,17 +118,14 @@
     }
   }
 
-  function closeModal() {
-    currentBottle.set(null);
-  }
-
   async function deleteBottle() {
-    if (!$currentBottle) return;
+    if (!activeBottle) return;
     if (!confirm($translator('confirmDelete') || 'Delete this message?')) return;
 
     try {
-      await api.deleteBottle($currentBottle.id);
-      closeModal();
+      await api.deleteBottle(activeBottle.id);
+      activeBottle = null;
+      activeBottleId = null;
       await refresh();
     } catch (e: unknown) {
       alert(typeof e === 'string' ? e : 'Failed to delete');
@@ -145,6 +144,10 @@
       messages={selectedMessages}
       onSelect={open}
       onBack={closeSenderView}
+      activeMessage={activeBottle}
+      activeMessageId={activeBottleId}
+      openingMessageId={openingBottleId}
+      onDelete={deleteBottle}
     />
   {:else}
     <div class="glass bottles-card">
@@ -197,22 +200,6 @@
     </div>
   {/if}
 </div>
-
-{#if $currentBottle}
-  <div class="modal-overlay" role="presentation" onclick={closeModal}>
-    <div class="glass modal" role="dialog" tabindex="-1" onkeydown={(e) => { if (e.key === 'Escape') closeModal(); }} onclick={(e) => e.stopPropagation()}>
-      <div class="modal-header">
-        <span class="from-label">{$translator('from')}: {$currentBottle.from}</span>
-        <span class="time-label">{formatTime($currentBottle.timestamp)}</span>
-        <div class="modal-actions">
-          <button class="icon-btn delete-btn" onclick={deleteBottle} title="Delete" aria-label="Delete">🗑</button>
-          <button class="icon-btn" onclick={closeModal}>&times;</button>
-        </div>
-      </div>
-      <pre class="modal-body">{$currentBottle.body}</pre>
-    </div>
-  </div>
-{/if}
 
 <style>
   .bottles-container {
@@ -388,67 +375,5 @@
     margin: 0.6rem 0 0;
     color: #6bffb8;
     font-size: 0.85rem;
-  }
-
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 100;
-    padding: 2rem;
-    backdrop-filter: blur(4px);
-  }
-
-  .modal {
-    width: 100%;
-    max-width: 600px;
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    padding: 1.5rem;
-  }
-
-  .modal-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .from-label {
-    color: #fff;
-    font-weight: 500;
-  }
-
-  .time-label {
-    color: rgba(255,255,255,0.62);
-    font-size: 0.8rem;
-    flex: 1;
-  }
-
-  .modal-body {
-    overflow-y: auto;
-    color: rgba(255,255,255,0.94);
-    white-space: pre-wrap;
-    word-break: break-word;
-    font-family: inherit;
-    margin: 0;
-    line-height: 1.6;
-  }
-
-  .modal-actions {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .delete-btn {
-    color: #ff6b6b;
-  }
-
-  .delete-btn:hover {
-    background: rgba(255, 107, 107, 0.2);
   }
 </style>

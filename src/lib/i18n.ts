@@ -23,6 +23,7 @@ const dictionaries = {
     throwBottle: 'Throw a Bottle',
     recipient: 'Recipient username',
     message: 'Write your message... up to 128KB',
+    rememberCredentials: 'Remember username and passphrase on this device',
     throwing: 'Throwing...',
     throwIntoOcean: 'Throw into the Ocean',
     bottleSent: 'Bottle sent! 🌊',
@@ -37,6 +38,10 @@ const dictionaries = {
     encrypted: 'Encrypted',
     plain: 'Plain',
     from: 'From',
+    sent: 'Sent',
+    delete: 'Delete',
+    selectBottle: 'Select a bottle to read it here.',
+    confirmDelete: 'Delete this message?',
     minimize: 'Minimize',
     close: 'Close',
     logout: 'Log out',
@@ -52,6 +57,7 @@ const dictionaries = {
     throwBottle: '投递漂流瓶',
     recipient: '收件人用户名',
     message: '写下你的消息……最多 128KB',
+    rememberCredentials: '在此设备上记住用户名和口令',
     throwing: '投递中...',
     throwIntoOcean: '投向海洋',
     bottleSent: '漂流瓶已送出！🌊',
@@ -66,6 +72,10 @@ const dictionaries = {
     encrypted: '已加密',
     plain: '明文',
     from: '来自',
+    sent: '已发送',
+    delete: '删除',
+    selectBottle: '选择一个漂流瓶，在这里阅读内容。',
+    confirmDelete: '要删除这条消息吗？',
     minimize: '最小化',
     close: '关闭',
     logout: '退出登录',
@@ -81,6 +91,7 @@ const dictionaries = {
     throwBottle: 'ボトルを流す',
     recipient: '相手のユーザー名',
     message: 'メッセージを書く... 最大 128KB',
+    rememberCredentials: 'この端末にユーザー名とパスフレーズを保存する',
     throwing: '送信中...',
     throwIntoOcean: '海へ流す',
     bottleSent: 'ボトルを流しました！🌊',
@@ -95,6 +106,10 @@ const dictionaries = {
     encrypted: '暗号化',
     plain: '平文',
     from: '差出人',
+    sent: '送信済み',
+    delete: '削除',
+    selectBottle: 'ボトルを選ぶと、ここで読めます。',
+    confirmDelete: 'このメッセージを削除しますか？',
     minimize: '最小化',
     close: '閉じる',
     logout: 'ログアウト',
@@ -110,6 +125,7 @@ const dictionaries = {
     throwBottle: 'Flasche werfen',
     recipient: 'Benutzername des Empfängers',
     message: 'Schreibe deine Nachricht... bis 128KB',
+    rememberCredentials: 'Benutzername und Passphrase auf diesem Gerät speichern',
     throwing: 'Wird geworfen...',
     throwIntoOcean: 'In den Ozean werfen',
     bottleSent: 'Flasche gesendet! 🌊',
@@ -124,6 +140,10 @@ const dictionaries = {
     encrypted: 'Verschlüsselt',
     plain: 'Klartext',
     from: 'Von',
+    sent: 'Gesendet',
+    delete: 'Löschen',
+    selectBottle: 'Wähle eine Flasche aus, um sie hier zu lesen.',
+    confirmDelete: 'Diese Nachricht löschen?',
     minimize: 'Minimieren',
     close: 'Schließen',
     logout: 'Abmelden',
@@ -139,6 +159,7 @@ const dictionaries = {
     throwBottle: 'Lanzar una botella',
     recipient: 'Usuario destinatario',
     message: 'Escribe tu mensaje... hasta 128KB',
+    rememberCredentials: 'Guardar usuario y frase secreta en este dispositivo',
     throwing: 'Lanzando...',
     throwIntoOcean: 'Lanzar al océano',
     bottleSent: '¡Botella enviada! 🌊',
@@ -153,6 +174,10 @@ const dictionaries = {
     encrypted: 'Cifrado',
     plain: 'Plano',
     from: 'De',
+    sent: 'Enviado',
+    delete: 'Eliminar',
+    selectBottle: 'Selecciona una botella para leerla aquí.',
+    confirmDelete: '¿Eliminar este mensaje?',
     minimize: 'Minimizar',
     close: 'Cerrar',
     logout: 'Cerrar sesión',
@@ -168,6 +193,7 @@ const dictionaries = {
     throwBottle: '병 던지기',
     recipient: '받는 사람 사용자 이름',
     message: '메시지를 입력하세요... 최대 128KB',
+    rememberCredentials: '이 기기에 사용자 이름과 암호문 저장',
     throwing: '던지는 중...',
     throwIntoOcean: '바다로 던지기',
     bottleSent: '병을 보냈습니다! 🌊',
@@ -182,6 +208,10 @@ const dictionaries = {
     encrypted: '암호화됨',
     plain: '일반',
     from: '보낸 사람',
+    sent: '보냄',
+    delete: '삭제',
+    selectBottle: '병을 선택하면 여기에서 읽을 수 있습니다.',
+    confirmDelete: '이 메시지를 삭제할까요?',
     minimize: '최소화',
     close: '닫기',
     logout: '로그아웃',
@@ -195,11 +225,10 @@ function initialLanguage(): Language {
 
 export const language = writable<Language>(initialLanguage());
 
-export type TranslationKey = keyof typeof dictionaries.en | 'confirmDelete';
+export type TranslationKey = keyof typeof dictionaries.en;
 
 export const translator = derived(language, ($language) => {
   return (key: TranslationKey): string => {
-    if (key === 'confirmDelete') return dictionaries[$language]['logout'] || dictionaries.en['logout'];
     return dictionaries[$language][key] || dictionaries.en[key];
   };
 });

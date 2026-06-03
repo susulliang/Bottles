@@ -16,6 +16,14 @@ pub fn run() {
             worker_url: std::env::var("WORKER_URL")
                 .unwrap_or_else(|_| "https://bottles-worker.bottles-susull.workers.dev".into()),
         })
+        .setup(|app| {
+            #[cfg(target_os = "macos")]
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_decorations(true);
+            }
+
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             commands::register,
             commands::login,

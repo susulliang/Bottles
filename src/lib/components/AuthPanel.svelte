@@ -3,10 +3,23 @@
   import { api } from '$lib/api';
   import { language, languageNames, translator, type Language } from '$lib/i18n';
 
+  const savedUsernameKey = 'saved_username';
+  const savedPassphraseKey = 'saved_passphrase';
+  const rememberCredentialsKey = 'remember_credentials';
+
   let username = '';
   let passphrase = '';
   let error = '';
   let loading = false;
+  let rememberCredentials = false;
+
+  if (typeof localStorage !== 'undefined') {
+    rememberCredentials = localStorage.getItem(rememberCredentialsKey) === 'true';
+    if (rememberCredentials) {
+      username = localStorage.getItem(savedUsernameKey) || '';
+      passphrase = localStorage.getItem(savedPassphraseKey) || '';
+    }
+  }
 
   async function submit() {
     error = '';
@@ -16,12 +29,31 @@
       if (registered) {
         welcomeMessage.set($translator('welcome'));
       }
+      persistCredentials();
       session.set(username);
     } catch (e: any) {
       error = typeof e === 'string' ? e : e?.message || 'error';
     } finally {
       loading = false;
     }
+  }
+
+  function persistCredentials() {
+    if (typeof localStorage === 'undefined') return;
+
+    localStorage.setItem(rememberCredentialsKey, String(rememberCredentials));
+    if (rememberCredentials) {
+      localStorage.setItem(savedUsernameKey, username);
+      localStorage.setItem(savedPassphraseKey, passphrase);
+    } else {
+      localStorage.removeItem(savedUsernameKey);
+      localStorage.removeItem(savedPassphraseKey);
+    }
+  }
+
+  function handleRememberToggle() {
+    rememberCredentials = !rememberCredentials;
+    persistCredentials();
   }
 </script>
 
@@ -55,6 +87,11 @@
         required
       />
 
+      <label class="remember-row">
+        <input type="checkbox" checked={rememberCredentials} onchange={handleRememberToggle} />
+        <span>{$translator('rememberCredentials')}</span>
+      </label>
+
       {#if error}
         <p class="error">{error}</p>
       {/if}
@@ -78,9 +115,9 @@
   }
 
   .auth-card {
-    padding: 2.5rem;
+    padding: 2.25rem;
     width: 100%;
-    max-width: 400px;
+    max-width: 420px;
     text-align: center;
   }
 
@@ -121,6 +158,23 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+  }
+
+  .remember-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: rgba(255, 255, 255, 0.82);
+    font-size: 0.9rem;
+    text-align: left;
+    user-select: none;
+  }
+
+  .remember-row input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: #7bdaff;
   }
 
   input {
