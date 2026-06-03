@@ -1,77 +1,93 @@
-# Bottles - 漂流瓶
+# Bottles
 
-A desktop app where you throw message "bottles" to specific recipients across the ocean.
+`Bottles` is a tiny desktop ocean for people who want to send secret little notes instead of behaving normally.
 
-## Features
-- Glass-morphism UI with 2 tabs: Throw / My Bottles
-- End-to-end encryption (X25519 ECDH + AES-256-GCM)
-- Cloudflare Worker backend (KV for users, R2 for messages)
-- First message plaintext with public key exchange, then fully encrypted
+You type a username.  
+You write a message.  
+You throw it into the sea.  
+Somewhere else, another goblin opens a bottle and reads it.
 
-## Prerequisites
+That is the whole joke.  
+That is also the product.
 
-### macOS
+## What This App Does
+
+- Lets you throw message bottles at a specific person.
+- Keeps the first exchange simple so two people can discover each other.
+- Encrypts later messages so the ocean stays dramatic, not leaky.
+- Looks like a dreamy glass postcard instead of enterprise suffering.
+
+## Why It Exists
+
+Because regular messengers are too efficient.
+
+Sometimes you do not want:
+
+- channels
+- threads
+- status circles
+- read receipts
+- “sent from my iPhone”
+
+Sometimes you want:
+
+- mystery
+- tides
+- emotional risk
+- a bottle
+
+## How To Use It
+
+1. Open the app.
+2. Log in, or quietly become a new user by accident.
+3. Throw a bottle at someone’s username.
+4. Open `My Bottles`.
+5. Read what washed back.
+6. Pretend you live on a poetic coastline.
+
+## Technical Truths, But Only A Few
+
+- Desktop app: `Tauri + Svelte`
+- Encryption: `X25519 + HKDF + AES-256-GCM`
+- Backend: `Cloudflare Worker`
+- Storage: `KV` for people, `R2` for bottles
+
+Everything else is just plumbing wearing a raincoat.
+
+## Running It
+
 ```bash
-# Xcode Command Line Tools
-xcode-select --install
-
-# Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
-
-### Windows
-1. Install [Microsoft Visual Studio C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (select "Desktop development with C++")
-2. Install [Rust](https://rustup.rs/)
-3. Install [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) (included in Windows 10 1803+)
-
-### All Platforms
-```bash
-# Node.js (v18+)
-# npm dependencies
 npm install
-```
-
-## Development
-
-```bash
-# Start Tauri dev server
 npm run tauri dev
-
-# Or start frontend only
-npm run dev
 ```
 
-## Build for Production
+If you want a production build:
 
 ```bash
 npm run tauri build
 ```
-The built app will be in `src-tauri/target/release/bundle/`.
 
-## Cloudflare Worker Deployment
+## Backend Notes
+
+The worker lives in `worker/`.
+
+Deploy it when you are ready for your ocean to become a public service:
 
 ```bash
 cd worker
 npm install
-# Update wrangler.toml with your KV namespace ID and R2 bucket name
 wrangler deploy
 ```
 
-Set the `WORKER_URL` environment variable or update it in `src-tauri/src/lib.rs` before building.
+If the desktop app needs a different backend URL, update `WORKER_URL`.
 
-## Architecture
+## Final Warning
 
-```
-┌──────────┐     HTTPS      ┌──────────────┐
-│  Tauri   │ ────────────▶ │  Cloudflare  │
-│  Desktop │ ◀──────────── │  Worker      │
-│  App     │                │  (Hono)      │
-└──────────┘                ├──────┬───────┤
-                             │ KV   │  R2  │
-                             └──────┴───────┘
-```
+This app contains:
 
-- **KV**: Usernames, encrypted private keys, public keys, IP registration count
-- **R2**: Bottle messages (128KB max)
-- **Auth**: Basic auth with SHA-256 passphrase hash
-- **Encryption**: X25519 ECDH + HKDF + AES-256-GCM
+- cryptography
+- feelings
+- usernames
+- drifting glass
+
+Use responsibly.

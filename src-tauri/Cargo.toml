@@ -1,6 +1,6 @@
 [package]
 name = "bottles"
-version = "0.1.4"
+version = "0.1.5"
 description = "漂流瓶"
 authors = ["you"]
 edition = "2021"

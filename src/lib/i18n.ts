@@ -1,6 +1,6 @@
 import { derived, writable } from 'svelte/store';
 
-export type Language = 'en' | 'zh' | 'jp' | 'de' | 'es' | 'ko';
+export type Language = 'en' | 'zh' | 'jp' | 'de' | 'es' | 'ko' | 'uk';
 
 export const languageNames: Record<Language, string> = {
   en: 'EN',
@@ -9,6 +9,7 @@ export const languageNames: Record<Language, string> = {
   de: 'DE',
   es: 'ES',
   ko: '한국어',
+  uk: 'Українська',
 };
 
 const dictionaries = {
@@ -215,6 +216,40 @@ const dictionaries = {
     minimize: '최소화',
     close: '닫기',
     logout: '로그아웃',
+  },
+  uk: {
+    title: 'Пляшки',
+    subtitle: 'Кидайте тихі повідомлення через океан.',
+    username: "Ім'я користувача",
+    passphrase: 'Парольна фраза',
+    enter: 'Увійти',
+    entering: 'Входимо...',
+    welcome: 'Вітаємо, вас успішно зареєстровано. Тепер можна кидати пляшки й розважатися. Не забудьте повернутися й перевірити, чи хтось надіслав пляшку вам!!',
+    throwBottle: 'Кинути пляшку',
+    recipient: "Ім'я отримувача",
+    message: 'Напишіть повідомлення... до 128KB',
+    rememberCredentials: "Запам'ятати ім'я та парольну фразу на цьому пристрої",
+    throwing: 'Кидаємо...',
+    throwIntoOcean: 'Кинути в океан',
+    bottleSent: 'Пляшку надіслано! 🌊',
+    myBottles: 'Мої пляшки',
+    noBottles: 'Пляшок ще немає. Чекаємо припливу...',
+    bottles: 'пляшок',
+    latest: 'Останнє',
+    replyPlaceholder: 'Швидка відповідь...',
+    reply: 'Відповісти',
+    replying: 'Відповідаємо...',
+    openLatest: 'Відкрити останнє',
+    encrypted: 'Зашифровано',
+    plain: 'Звичайне',
+    from: 'Від',
+    sent: 'Надіслано',
+    delete: 'Видалити',
+    selectBottle: 'Виберіть пляшку, щоб прочитати її тут.',
+    confirmDelete: 'Видалити це повідомлення?',
+    minimize: 'Згорнути',
+    close: 'Закрити',
+    logout: 'Вийти',
   },
 } satisfies Record<Language, Record<string, string>>;
 

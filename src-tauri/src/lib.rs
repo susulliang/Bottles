@@ -5,6 +5,7 @@ mod state;
 
 use std::collections::HashMap;
 use std::sync::Mutex;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -31,6 +32,7 @@ pub fn run() {
             commands::logout,
             commands::throw_bottle,
             commands::fetch_bottles,
+            commands::fetch_sent_bottles,
             commands::open_bottle,
             commands::delete_bottle,
             commands::minimize_app,
